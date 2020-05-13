@@ -3,7 +3,8 @@
 
 import numpy as np
 from qiskit import BasicAer, execute, IBMQ
-from qiskit.visualization import plot_histogram
+from qiskit.providers.ibmq import least_busy
+#from qiskit.visualization import plot_histogram
 from qiskit.aqua import QuantumInstance
 from qiskit.aqua.algorithms import Grover
 from qiskit.aqua.components.oracles import LogicalExpressionOracle
@@ -11,8 +12,8 @@ from qiskit.compiler import transpile
 from qiskit.tools.monitor import job_monitor
 import random
 
-get_ipython().run_line_magic('config', "InlineBackend.figure_format = 'svg' # Makes the images look nice")
-get_ipython().run_line_magic('matplotlib', 'inline')
+#get_ipython().run_line_magic('config', "InlineBackend.figure_format = 'svg' # Makes the images look nice")
+#get_ipython().run_line_magic('matplotlib', 'inline')
 
 
 """ This assumes that the counts are already sorted and as a list """
@@ -47,15 +48,18 @@ def random_selection(probabilities, debug=False):
 expression = 'a & b'
 oracle = LogicalExpressionOracle(expression, optimization = True)
 grover = Grover(oracle)
+grover_compiled = grover.construct_circuit(measurement=True)
 
 
-# Load our saved IBMQ accounts and get the ibmq_16_melbourne backend
+# Load our saved IBMQ accounts and get the backend
+print("Loading account...")
 provider = IBMQ.load_account()
+print("Account loaded")
 
 provider = IBMQ.get_provider(hub='ibm-q')
-device = provider.get_backend('ibmq_16_melbourne')
-
-grover_compiled = transpile(result['circuit'], backend=device, optimization_level=3)
+device = provider.get_backend('ibmq_ourense')
+#device = least_busy(provider.backends(simulator=False))
+print("Running on device: ", device)
 
 job = execute(grover_compiled, backend=device, shots=8192)
 job_monitor(job, interval = 2)
@@ -78,8 +82,10 @@ ordered_counts = [
 
 ai_probabilities = counts_to_probabilities(ordered_counts)
 
-ordered_counts.pop()
-ai_action_probabilities = counts_to_probabilities(ordered_counts)
+# We use the 3 invalid probabilities for determining the throw
+ordered_counts_without_valid = ordered_counts
+ordered_counts_without_valid.pop()
+ai_action_probabilities = counts_to_probabilities(ordered_counts_without_valid)
 
 
 """ Now we can finally start the game! """
@@ -165,4 +171,12 @@ while(not game_over):
 
 
 
+print(f'Counts: {counts}')
 
+print()
+
+total_counts = sum(ordered_counts)
+raw_ai_probabilities = list(map(lambda x: (x/total_counts), ordered_counts))
+print(f'AI probabilities: {ai_probabilities}')
+
+print()
