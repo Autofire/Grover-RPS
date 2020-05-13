@@ -43,8 +43,13 @@ def random_selection(probabilities, debug=False):
 
 
 
-""" Get the data from the quantum computer """
+""" Starting here... first we'll give the opening message """
+print("Grover is an AI who's decisions are based on the result of running the Grover algorithm.")
+print("He tends to cheat more on bad days, when there's more noise in the quantum computer...")
+print()
 
+
+""" Get the data from the quantum computer """
 expression = 'a & b'
 oracle = LogicalExpressionOracle(expression, optimization = True)
 grover = Grover(oracle)
@@ -54,21 +59,20 @@ grover_compiled = grover.construct_circuit(measurement=True)
 # Load our saved IBMQ accounts and get the backend
 print("Loading account...")
 provider = IBMQ.load_account()
-print("Account loaded")
 
 provider = IBMQ.get_provider(hub='ibm-q')
 device = provider.get_backend('ibmq_ourense')
 #device = least_busy(provider.backends(simulator=False))
-print("Running on device: ", device)
+print("Selected device: ", device)
 
-job = execute(grover_compiled, backend=device, shots=8192)
+job = execute(grover_compiled, backend=device, shots=1024)
 job_monitor(job, interval = 2)
 
 
 
-
-
 """ Now we can process the for our RNG stuff """
+
+print("Computing probabilities...")
 
 counts = job.result().get_counts()
 
@@ -88,7 +92,11 @@ ordered_counts_without_valid.pop()
 ai_action_probabilities = counts_to_probabilities(ordered_counts_without_valid)
 
 
+
 """ Now we can finally start the game! """
+
+print()
+print("Thanks for waiting! Grover's ready to play!")
 
 game_over = False
 num_to_throw = {
@@ -98,7 +106,7 @@ num_to_throw = {
 }
 
 points_to_win = 5
-player_points = 2
+player_points = 0
 grover_points = 0
 
 debug_rng = False
@@ -116,6 +124,8 @@ while(not game_over):
         game_over = True
         
     else:
+        print()
+
         ai_action_type = random_selection(ai_probabilities, debug=debug_rng)
 
         if(ai_action_type == 0):
@@ -123,7 +133,7 @@ while(not game_over):
             print("You appear to have died...")
             print()
             print("Incidentally, that means Grover wins.")
-            #game_over = True
+            game_over = True
         elif(ai_action_type == 1):
             print("Grover laughs histerically!")
             print("(You seem to have lost this round...)")
@@ -154,11 +164,11 @@ while(not game_over):
     if(not game_over):
         print()
         if(player_points >= points_to_win):
-            print(f"You have {player_points}, so you win the game!")
+            print(f"You have {player_points} points, so you win the game!")
             print("Grover congratulates you on your hard-fought victory.")
             game_over = True
         elif(grover_points >= points_to_win):
-            print(f"Grover has {grover_points}, so he wins the game.")
+            print(f"Grover has {grover_points} points, so he wins the game.")
             print("Grover smiles with glee!")
             game_over = True
         else:
@@ -166,17 +176,30 @@ while(not game_over):
         
         print()
 
+# End while(not game_over)
 
-    #game_over = True # TODO Only do this if end is given
 
+print()
+print("Results of the quantum computation:")
 
+# re-get this stuff
+ordered_counts = [
+    counts.get('00', 0),
+    counts.get('01', 0),
+    counts.get('10', 0),
+    counts.get('11', 0)
+]
 
 print(f'Counts: {counts}')
 
-print()
-
 total_counts = sum(ordered_counts)
 raw_ai_probabilities = list(map(lambda x: (x/total_counts), ordered_counts))
-print(f'AI probabilities: {ai_probabilities}')
+print(f'AI probabilities:       {raw_ai_probabilities} (Gun/Laugh/Forget/Normal)')
+
+ordered_counts.pop()
+
+total_counts = sum(ordered_counts)
+raw_ai_throw_probabilities = list(map(lambda x: (x/total_counts), ordered_counts))
+print(f'AI throw probabilities: {raw_ai_throw_probabilities} (Rock/Paper/Scissors)')
 
 print()
