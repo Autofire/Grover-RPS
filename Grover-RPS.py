@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+"""
+Some of this code is based on the code found in this tutorial page:
+https://qiskit.org/textbook/ch-applications/satisfiability-grover.html
+
+However, much has changed since starting from there.
+"""
+
 import numpy as np
 from qiskit import BasicAer, execute, IBMQ
 from qiskit.providers.ibmq import least_busy
